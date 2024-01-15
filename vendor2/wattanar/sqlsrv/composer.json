@@ -1,0 +1,22 @@
+{
+    "name": "wattanar/sqlsrv",
+    "type": "library",
+    "description": "library help you query easier with sqlsrv",
+    "keywords": ["php", "sqlsrv"],
+    "homepage": "https://github.com/wattanar/sqlsrv",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Wattana Ruengmucha",
+            "email": "iamwattanas@gmail.com",
+            "homepage": "https://wattanar.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": ">=5.4.0"
+    },
+    "autoload": {
+        "classmap": ["src/sqlsrv.php"]
+    }
+}

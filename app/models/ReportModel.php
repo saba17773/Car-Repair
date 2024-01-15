@@ -1,0 +1,257 @@
+<?php
+
+namespace App\Models;
+
+use Wattanar\Sqlsrv;
+use App\Controllers\ConnectionController;
+
+class ReportModel
+{
+	public function __construct()
+	{
+		$this->conn = new ConnectionController;
+	}
+
+	public function reportApp($inp_Repair_report)
+	{
+		return Sqlsrv::array(
+			$this->conn->connect(),
+			"SELECT	C.*
+					,Year(C.CreateDate)[Year]
+					,DAY(C.CreateDate)[DAY]
+					,MONTH(C.CreateDate)[MONTH]
+					,B.BRAND[BrandName]
+					,R.REGISTERTYPE[RegisterTypeName]
+					,CM.REGCAR
+					,CO.INTERNALCODE
+					,D.DRIVERNAME
+					,C.APPROVEDBY
+					,A.NAME[RENAME]
+					,C.APPROVEDBYHR
+					,H.NAME[HRNAME]
+					,C.APPROVEDBYDIRECTOR
+					,DT.NAME[DTNAME]
+			from REPAIR C
+			LEFT JOIN MASTER_CAR CM 
+			ON CM.CARID=C.CARID
+			LEFT JOIN MASTER_COMPANY CO 
+			ON CO.ID=C.COMPANY
+			LEFT JOIN MASTER_BRAND B 
+			ON CM.BRAND=B.ID
+			LEFT JOIN MASTER_CARTYPE P 
+			ON CM.CARTYPE=P.ID
+			LEFT JOIN MASTER_REGISTERTYPE R 
+			ON CM.REGISTERTYPE=R.ID
+			LEFT JOIN MASTER_DRIVER D
+			ON C.DRIVER=D.ID
+			LEFT JOIN (
+						SELECT MU.ID,MU.NAME
+						FROM MASTER_USER MU
+						)A ON A.ID = C.APPROVEDBY
+			LEFT JOIN (
+						SELECT MU.ID,MU.NAME
+						FROM MASTER_USER MU
+						)H ON H.ID = C.APPROVEDBYHR	
+			LEFT JOIN (
+						SELECT MU.ID,MU.NAME
+						FROM MASTER_USER MU
+						)DT ON DT.ID = C.APPROVEDBYDIRECTOR						
+			WHERE C.REPAIRID = '$inp_Repair_report'"
+		);
+	}
+
+	public function reportApp_line($inp_Repair_report)
+	{
+		return Sqlsrv::array(
+			$this->conn->connect(),
+			"SELECT	ROW_NUMBER() OVER (Order by C.REPAIRID) AS RowNumber
+					,C.*
+			from REPAIRDETAIL C
+			WHERE C.REPAIRID ='$inp_Repair_report'"
+		);
+	}
+
+	public function reportItem($inpCarID)
+	{
+		return Sqlsrv::array(
+			$this->conn->connect(),
+			"SELECT C.*
+					,B.BRAND[BRANDNAME]
+					,CT.CARTYPE[CARTYPENAME]
+					,RT.REGISTERTYPE[REGISTERTYPENAME]
+					,CP.CAPACITY[CAPACITYNAME]
+					,MP.POSITIONDES
+					,MDT.DEPARTMENTDES
+					,SM.SECTIONDES
+					,INS.CLOSINGDATE[INS]
+					,TAX.CLOSINGDATE[TAX]
+					,ACT.CLOSINGDATE[ACT]	
+					,MD.DRIVERNAME
+					,MP.POSITIONDES
+					,MDT.DEPARTMENTDES						
+			FROM MASTER_CAR C
+			LEFT JOIN MASTER_BRAND B ON B.ID = C.BRAND
+			LEFT JOIN MASTER_CARTYPE CT ON CT.ID = C.CARTYPE
+			LEFT JOIN MASTER_REGISTERTYPE RT ON RT.ID = C.REGISTERTYPE
+			LEFT JOIN MASTER_CAPACITY CP ON CP.ID = C.CAPACITY
+			LEFT JOIN MASTER_SECTION SM ON SM.ID = C.SECTION
+			LEFT JOIN MASTER_DRIVER MD ON MD.ID = C.DRIVER
+			LEFT JOIN MASTER_DEPARTMENT MDT ON MDT.ID = MD.DEPARTMENT
+			LEFT JOIN MASTER_POSITION MP ON MP.ID = MD.POSITION
+			LEFT JOIN(
+						SELECT CD.CarID,IC.INSURANCEDES,CD.CLOSINGDATE,CD.DetailType
+						FROM CARDETAIL CD
+						LEFT JOIN MASTER_INSURANCE IC ON IC.ID = CD.INSURANCE
+						WHERE CD.DETAILTYPE = 'INS'
+						AND CD.STATUS = 1
+					  )INS ON INS.CARID = C.CARID
+			LEFT JOIN(
+						SELECT CDT.CarID,CDT.CLOSINGDATE,CDT.DetailType
+						FROM CARDETAIL CDT
+						WHERE CDT.DETAILTYPE = 'TAX'
+						AND CDT.STATUS = 1
+					  )TAX ON TAX.CARID = C.CARID	
+			LEFT JOIN(
+						SELECT CDA.CARID,CDA.CLOSINGDATE,CDA.DetailType
+						FROM CARDETAIL CDA
+						WHERE CDA.DETAILTYPE = 'ACT'
+						AND CDA.STATUS = 1
+					  )ACT ON ACT.CARID = C.CARID
+			WHERE C.CARID = (
+								SELECT R.CARID
+								FROM REPAIR R
+								WHERE R.REPAIRID = '$inpCarID'
+							)
+			OR C.CARID = '$inpCarID'"
+		);
+	}
+
+	public function reportItem_line($inpCarID)
+	{
+		return Sqlsrv::array(
+			$this->conn->connect(),
+			"SELECT	ROW_NUMBER() OVER (Order by RD.REPAIRDATE) AS ROWNUMBER
+					,R.*
+					,RD.*
+					,CB.CAUSE[CAUSENAME]
+					,CE.DESCRIPTION[DETAILNAME]
+			from REPAIR R
+			JOIN REPAIRDETAIL RD
+			ON RD.REPAIRID = R.REPAIRID
+			LEFT JOIN MASTER_CAUSE CB
+			ON RD.CAUSE = CB.ID
+			LEFT JOIN MASTER_CAUSEDETAIL CE
+			ON RD.DETAIL = CE.ID
+		 	WHERE R.CARID = (
+								SELECT R.CARID
+								FROM REPAIR R
+								WHERE R.REPAIRID = '$inpCarID'
+							)
+			OR R.CARID = '$inpCarID'
+			ORDER BY RD.REPAIRDATE ASC"
+		);
+	}
+
+// Nattapon_edit_20180710
+	public function reportAppac($inp_acc_report)
+	{
+		return Sqlsrv::array(
+			$this->conn->connect(),
+			"SELECT	C.*
+					,Year(C.CreateDate)[Year]
+					,DAY(C.CreateDate)[DAY]
+					,MONTH(C.CreateDate)[MONTH]
+					,B.BRAND[BrandName]
+					,R.REGISTERTYPE[RegisterTypeName]
+					,CM.REGCAR
+					,CO.INTERNALCODE
+					,CO.DESCRIPTIONTH[DESCOMPANY]
+					,D.DRIVERNAME
+					,SD.SECTIONDES [SECDRIVER]
+					,DM.DEPARTMENTDES [DEPDRIVER]
+					,C.APPROVEDBY
+					,A.NAME[RENAME]
+					,C.APPROVEDBYHR
+					,H.NAME[HRNAME]
+					,C.APPROVEDBYDIRECTOR
+					,DT.NAME[DTNAME]
+					,CA.CAUSE
+					,CZ.DESCRIPTION
+					,UU.NAME[USERNAME]
+					,MS.SECTIONDES
+					,DP.DEPARTMENTDES
+					,DS.YEAR[YEARRUN]
+					,DS.COMPANY
+					,DS.RUNNUMBER
+					,DS.RUNNINGDSG
+					,DL.CRADLE
+					,(SELECT TOP 1 NAME FROM MASTER_USER WHERE POSITION = 5 AND STATUS = 1) AS DirectorName
+			from REPAIR C
+			LEFT JOIN MASTER_CAR CM 
+			ON CM.CARID=C.CARID
+			LEFT JOIN MASTER_COMPANY CO 
+			ON CO.ID=C.COMPANY
+			LEFT JOIN MASTER_BRAND B 
+			ON CM.BRAND=B.ID
+			LEFT JOIN MASTER_CARTYPE P 
+			ON CM.CARTYPE=P.ID
+			LEFT JOIN MASTER_REGISTERTYPE R 
+			ON CM.REGISTERTYPE=R.ID
+			LEFT JOIN MASTER_DRIVER D
+			ON C.DRIVER=D.ID
+			LEFT JOIN MASTER_SECTION SD
+			ON SD.ID = D.SECTION
+			LEFT JOIN MASTER_DEPARTMENT DM
+			ON DM.ID = D.DEPARTMENT
+			LEFT JOIN REPAIRDETAIL CR
+			ON C.REPAIRID=CR.REPAIRID
+			LEFT JOIN MASTER_CRADLE DL
+			ON DL.ID = CR.CRADLE 
+			LEFT JOIN MASTER_CAUSE CA
+			ON CR.CAUSE=CA.ID
+			LEFT JOIN MASTER_CAUSEDETAIL CZ
+			ON CR.DETAIL=CZ.ID
+			LEFT JOIN MASTER_USER UU
+			ON CR.CREATEBY=UU.ID
+			LEFT JOIN MASTER_SECTION MS
+			ON UU.SECTION=MS.ID
+			LEFT JOIN MASTER_DEPARTMENT DP
+			ON UU.DEPARTMENT=DP.ID
+			LEFT JOIN DSGRUNNING DS
+			ON C.REPAIRID = DS.REPAIRID
+			LEFT JOIN (
+						SELECT MU.ID,MU.NAME
+						FROM MASTER_USER MU
+						)A ON A.ID = C.APPROVEDBY
+			LEFT JOIN (
+						SELECT MU.ID,MU.NAME
+						FROM MASTER_USER MU
+						)H ON H.ID = C.APPROVEDBYHR	
+			LEFT JOIN (
+						SELECT MU.ID,MU.NAME
+						FROM MASTER_USER MU
+						)DT ON DT.ID = C.APPROVEDBYDIRECTOR						
+			WHERE C.REPAIRID = '$inp_acc_report'"
+		);
+	}
+
+	public function reportApp_lineac($inp_acc_report)
+	{
+		return Sqlsrv::array(
+			$this->conn->connect(),
+			"SELECT	ROW_NUMBER() OVER (Order by C.REPAIRID) AS RowNumber
+					,C.*
+					,CC.CAUSE 
+					,CX.DESCRIPTION
+					,U.NAME[USERNAME]
+			from REPAIRDETAIL C
+			LEFT JOIN MASTER_CAUSE CC
+			ON C.CAUSE=CC.ID
+			LEFT JOIN MASTER_CAUSEDETAIL CX
+			ON C.DETAIL=CX.ID
+			LEFT JOIN MASTER_USER U
+			ON C.CREATEBY=U.ID 
+			WHERE C.REPAIRID ='$inp_acc_report'"
+		);
+	}
+}
