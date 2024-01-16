@@ -24,6 +24,14 @@ Run this command to run the test suite
 	php composer.phar test
 
 That's it! Now go build something cool.
+ex.
+
+![image](https://github.com/saba17773/Car-Repair/assets/71871023/ea4028ba-1889-462c-991d-ee461447a581)
+![image](https://github.com/saba17773/Car-Repair/assets/71871023/c8e05927-8441-4464-ba76-ee642501e462)
+![image](https://github.com/saba17773/Car-Repair/assets/71871023/27ebd277-38c0-4aca-af55-84fe89a1e8ee)
+
+
+
 
 
 
